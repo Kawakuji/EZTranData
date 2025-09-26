@@ -1,8 +1,15 @@
 export enum FileFormat {
   CSV = 'csv',
+  TSV = 'tsv',
   JSON = 'json',
   XLSX = 'xlsx',
+  ODS = 'ods',
   PARQUET = 'parquet',
+  SQL = 'sql',
+  XML = 'xml',
+  HTML = 'html',
+  MARKDOWN = 'md',
+  ARROW = 'arrow',
   UNKNOWN = 'unknown',
 }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDataState, useDataDispatch } from '../hooks/useDataStore';
-import { FileIcon, XIcon } from './icons';
+import { FileIcon, ArrowLeftIcon } from './icons';
 
 const PreviewTable: React.FC = () => {
   const { headers, transformedData, fileName, fileSize } = useDataState();
@@ -27,18 +27,22 @@ const PreviewTable: React.FC = () => {
     dispatch({ type: 'CLEAR_DATA' });
   };
 
+  const isNumericOrBoolean = (value: any): boolean => {
+    return typeof value === 'number' || typeof value === 'boolean';
+  }
 
   return (
     <div className="flex-1 flex flex-col bg-gray-800 rounded-lg border border-gray-700 overflow-hidden min-h-0">
       <div className="flex items-center justify-between p-3 border-b border-gray-700 bg-gray-800/80 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <FileIcon className="h-5 w-5 text-gray-400" />
-            <span className="font-medium text-white">{fileName}</span>
-            <span className="text-sm text-gray-400">{formatBytes(fileSize)}</span>
-            <span className="text-sm text-gray-400 font-mono">({transformedData.length} rows)</span>
+          <div className="flex items-center gap-3 overflow-hidden">
+            <FileIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            <span className="font-medium text-white truncate" title={fileName}>{fileName}</span>
+            <span className="text-sm text-gray-400 flex-shrink-0">{formatBytes(fileSize)}</span>
+            <span className="text-sm text-gray-400 font-mono flex-shrink-0">({transformedData.length} rows)</span>
           </div>
-          <button onClick={handleClearData} className="p-1 rounded-md text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
-            <XIcon className="h-5 w-5" />
+          <button onClick={handleClearData} className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md text-gray-300 bg-gray-700 hover:bg-cyan-600 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500">
+            <ArrowLeftIcon className="h-4 w-4" />
+            <span>Upload New File</span>
           </button>
       </div>
       <div className="flex-1 overflow-auto">
@@ -57,11 +61,18 @@ const PreviewTable: React.FC = () => {
             {transformedData.slice(0, 200).map((row, rowIndex) => ( // Virtualize by showing only 200 rows
               <tr key={rowIndex} className="border-b border-gray-700 hover:bg-gray-700/50">
                 <td className="px-4 py-2 font-mono text-right text-gray-500">{rowIndex + 1}</td>
-                {headers.map((header) => (
-                  <td key={`${rowIndex}-${header}`} className="px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis text-gray-300">
-                    {String(row[header] ?? '')}
-                  </td>
-                ))}
+                {headers.map((header) => {
+                  const value = row[header];
+                  const cellClassName = isNumericOrBoolean(value)
+                    ? 'px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis text-cyan-300 text-right font-mono'
+                    : 'px-4 py-2 whitespace-nowrap overflow-hidden text-ellipsis text-gray-300';
+
+                  return (
+                    <td key={`${rowIndex}-${header}`} className={cellClassName}>
+                      {String(value ?? '')}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>

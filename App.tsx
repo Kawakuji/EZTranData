@@ -1,10 +1,10 @@
 import React from 'react';
-import { DataProvider, useDataState } from './hooks/useDataStore';
+import { DataProvider, useDataState, useDataDispatch } from './hooks/useDataStore';
 import FileDrop from './components/FileDrop';
 import PreviewTable from './components/PreviewTable';
 import TransformPanel from './components/TransformPanel';
 import ExportPanel from './components/ExportPanel';
-import { DatabaseIcon, ZapIcon } from './components/icons';
+import { DatabaseIcon, ZapIcon, ArrowLeftIcon } from './components/icons';
 
 const App: React.FC = () => {
   return (
@@ -25,9 +25,6 @@ const MainLayout: React.FC = () => {
           <h1 className="text-2xl font-bold tracking-tight text-white">
             FastData
           </h1>
-        </div>
-        <div className="flex items-center gap-4">
-            <a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">GitHub</a>
         </div>
       </header>
 
@@ -60,12 +57,26 @@ const LoadingState: React.FC = () => (
     </div>
 );
 
-const ErrorState: React.FC<{ message: string }> = ({ message }) => (
-    <div className="flex-1 flex flex-col items-center justify-center bg-red-900/20 rounded-lg border border-red-500/50 p-8 text-center">
-        <h3 className="text-xl font-semibold text-red-400">An Error Occurred</h3>
-        <p className="mt-2 text-red-300">{message}</p>
-    </div>
-);
+const ErrorState: React.FC<{ message: string }> = ({ message }) => {
+    const dispatch = useDataDispatch();
+    const handleClear = () => {
+        dispatch({ type: 'CLEAR_DATA' });
+    };
+
+    return (
+        <div className="flex-1 flex flex-col items-center justify-center bg-red-900/20 rounded-lg border border-red-500/50 p-8 text-center">
+            <h3 className="text-xl font-semibold text-red-400">An Error Occurred</h3>
+            <p className="mt-2 text-red-300">{message}</p>
+            <button
+                onClick={handleClear}
+                className="mt-6 flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-red-500"
+            >
+                <ArrowLeftIcon className="h-4 w-4" />
+                <span>Upload a different file</span>
+            </button>
+        </div>
+    );
+};
 
 
 export default App;

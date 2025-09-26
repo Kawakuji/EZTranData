@@ -18,8 +18,15 @@ const getFileFormat = (fileName: string): FileFormat => {
   const extension = fileName.split('.').pop()?.toLowerCase();
   switch (extension) {
     case 'csv': return FileFormat.CSV;
+    case 'tsv': return FileFormat.TSV;
     case 'json': return FileFormat.JSON;
     case 'xlsx': return FileFormat.XLSX;
+    case 'ods': return FileFormat.ODS;
+    case 'xml': return FileFormat.XML;
+    case 'html':
+    case 'htm':
+      return FileFormat.HTML;
+    case 'md': return FileFormat.MARKDOWN;
     case 'parquet': return FileFormat.PARQUET;
     default: return FileFormat.UNKNOWN;
   }
