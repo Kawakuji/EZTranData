@@ -1,0 +1,5 @@
+{
+  "name": "FastData - Database Transformer",
+  "description": "An in-browser database transformer. Drag and drop CSV, JSON, XLSX, or Parquet files to preview, transform with SQL, and export in your desired format. All processing is done locally for speed and privacy.",
+  "requestFramePermissions": []
+}
