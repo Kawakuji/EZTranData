@@ -3,8 +3,15 @@ import { useDataState } from '../hooks/useDataStore';
 import { DownloadIcon } from './icons';
 import { FileFormat } from '../types';
 
+declare global {
+  interface Window {
+    Papa: any;
+    XLSX: any;
+  }
+}
+
 const ExportPanel: React.FC = () => {
-    const { transformedData } = useDataState();
+    const { transformedData, fileName } = useDataState();
     const [exportFormat, setExportFormat] = useState<FileFormat>(FileFormat.CSV);
 
     const handleExport = () => {
@@ -12,31 +19,60 @@ const ExportPanel: React.FC = () => {
             alert("No data to export.");
             return;
         }
+        
+        const baseFileName = fileName.split('.').slice(0, -1).join('.') || 'export';
+        const newFileName = `${baseFileName}_transformed.${exportFormat}`;
 
-        // In a real application, this would trigger a download.
-        // For CSV, you'd use Papa.unparse().
-        // For other formats, you'd use libraries like 'xlsx' or 'parquet-wasm'.
-        
-        console.log(`Simulating export of ${transformedData.length} rows as ${exportFormat.toUpperCase()}`);
-        
-        const content = exportFormat === FileFormat.JSON 
-            ? JSON.stringify(transformedData, null, 2)
-            : window.Papa.unparse(transformedData);
-        
-        const blob = new Blob([content], { type: exportFormat === FileFormat.JSON ? 'application/json' : 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `fastdata_export.${exportFormat}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        let blob: Blob;
 
-        alert(`Data exported as ${exportFormat.toUpperCase()}! Check your downloads.`);
+        try {
+            switch (exportFormat) {
+                case FileFormat.CSV: {
+                    const csv = window.Papa.unparse(transformedData);
+                    blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    break;
+                }
+                case FileFormat.JSON: {
+                    const json = JSON.stringify(transformedData, null, 2);
+                    blob = new Blob([json], { type: 'application/json' });
+                    break;
+                }
+                case FileFormat.XLSX: {
+                    if (typeof window.XLSX === 'undefined') {
+                        throw new Error('XLSX library not available. Please ensure you are online.');
+                    }
+                    const worksheet = window.XLSX.utils.json_to_sheet(transformedData);
+                    const workbook = window.XLSX.utils.book_new();
+                    window.XLSX.utils.book_append_sheet(workbook, worksheet, 'Transformed Data');
+                    const excelBuffer = window.XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                    blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+                    break;
+                }
+                case FileFormat.PARQUET: {
+                    alert('Parquet export is not yet supported.');
+                    return;
+                }
+                default:
+                    alert(`Unsupported export format: ${exportFormat}`);
+                    return;
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = newFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Export failed:", error);
+            alert(`An error occurred during export: ${error instanceof Error ? error.message : String(error)}`);
+        }
     };
 
-    const exportOptions = [FileFormat.CSV, FileFormat.JSON, FileFormat.PARQUET, FileFormat.XLSX];
+    const exportOptions = [FileFormat.CSV, FileFormat.JSON, FileFormat.XLSX, FileFormat.PARQUET];
 
     return (
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
@@ -53,8 +89,9 @@ const ExportPanel: React.FC = () => {
                         className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                     >
                         {exportOptions.map(format => (
-                           <option key={format} value={format}>
+                           <option key={format} value={format} disabled={format === FileFormat.PARQUET}>
                                {format.toUpperCase()}
+                               {format === FileFormat.PARQUET && ' (Coming Soon)'}
                            </option>
                         ))}
                     </select>

@@ -4,7 +4,7 @@ import { PlayIcon, DatabaseIcon } from './icons';
 import { FileFormat } from '../types';
 
 const TransformPanel: React.FC = () => {
-  const { sqlQuery, isLoading, fileFormat } = useDataState();
+  const { sqlQuery, isLoading, fileFormat, previewData } = useDataState();
   const dispatch = useDataDispatch();
   
   const handleQueryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -12,32 +12,35 @@ const TransformPanel: React.FC = () => {
   };
 
   const handleRunQuery = () => {
-    // This is a simulation of running a query in a Web Worker with DuckDB-Wasm
+    // This is a simulation of running a query, now based on the actual loaded data.
     console.log("Simulating SQL query execution:", sqlQuery);
 
-    // In a real app, you would post this message to a Web Worker:
-    // worker.postMessage({ type: 'RUN_SQL', query: sqlQuery, file: file });
-
-    // For this simulation, we'll just show a loading state and return the original data.
-    // A real implementation would parse the SQL, apply it to the data, and return the result.
-    dispatch({ type: 'SET_TRANSFORMED_DATA', payload: [] }); // Clear previous results
+    dispatch({ type: 'SET_TRANSFORMED_DATA', payload: [] }); // Clear previous results to indicate loading
     
     // Simulate worker processing time
     setTimeout(() => {
-        // This is where you would dispatch 'SET_TRANSFORMED_DATA' with the actual result from the worker
-        // For now, we dispatch the original data again for demonstration.
-        // Let's pretend we're applying a filter.
-        dispatch({
-            type: 'SET_DATA',
-            payload: {
-                headers: ["id", "product_name", "price", "category"],
-                previewData: Array.from({length: 10}, (_, i) => ({
-                    id: i + 1,
-                    product_name: `Filtered Product ${i + 1}`,
-                    price: (Math.random() * 50).toFixed(2),
-                    category: `Filtered Category`
-                }))
+        // A very basic simulation that respects the original data.
+        // It doesn't parse the SQL, but applies a mock transformation.
+        // It mimics the "LIMIT 10" and filtering seen in the user's screenshot.
+        const limit = 10;
+        const resultData = previewData.slice(0, limit).map((row, i) => {
+            const newRow = {...row};
+            // Try to find columns to apply a "filter" to for demonstration
+            const productNameKey = Object.keys(newRow).find(k => k.toLowerCase().includes('product') || k.toLowerCase().includes('name'));
+            const categoryKey = Object.keys(newRow).find(k => k.toLowerCase().includes('category'));
+
+            if (productNameKey) {
+                newRow[productNameKey] = `Filtered Product ${i + 1}`;
             }
+            if (categoryKey) {
+                newRow[categoryKey] = `Filtered Category`;
+            }
+            return newRow;
+        });
+
+        dispatch({
+            type: 'SET_TRANSFORMED_DATA',
+            payload: resultData,
         });
         console.log('Simulation complete.');
     }, 1500);
@@ -71,7 +74,7 @@ const TransformPanel: React.FC = () => {
 
       <button
         onClick={handleRunQuery}
-        disabled={isLoading}
+        disabled={isLoading || previewData.length === 0}
         className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 text-white font-semibold rounded-md hover:bg-cyan-500 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500"
       >
         <PlayIcon className="h-5 w-5" />

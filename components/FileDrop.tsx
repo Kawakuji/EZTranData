@@ -19,8 +19,6 @@ const FileDrop: React.FC = () => {
 
     dispatch({ type: 'START_LOADING', payload: file });
 
-    // For simplicity, we'll only implement CSV parsing with PapaParse
-    // Other file types would require their respective libraries (xlsx, parquet-wasm)
     const extension = file.name.split('.').pop()?.toLowerCase();
     if (extension === 'csv') {
       window.Papa.parse(file, {
@@ -38,10 +36,34 @@ const FileDrop: React.FC = () => {
           dispatch({ type: 'SET_ERROR', payload: `File Reading Error: ${error.message}` });
         },
       });
+    } else if (extension === 'json') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const text = e.target?.result as string;
+                const data: TableData = JSON.parse(text);
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    dispatch({ type: 'SET_ERROR', payload: 'Invalid JSON format. Expected an array of objects.' });
+                    return;
+                }
+
+                const headers = Object.keys(data[0]);
+                dispatch({ type: 'SET_DATA', payload: { headers, previewData: data } });
+
+            } catch (err) {
+                const error = err as Error;
+                dispatch({ type: 'SET_ERROR', payload: `JSON Parsing Error: ${error.message}` });
+            }
+        };
+        reader.onerror = () => {
+            dispatch({ type: 'SET_ERROR', payload: 'Could not read the file.' });
+        };
+        reader.readAsText(file);
     } else {
-        // Mock parsing for other types
+        // Mock parsing for other types as libraries aren't available in this environment
         setTimeout(() => {
-            if (extension === 'json' || extension === 'xlsx' || extension === 'parquet') {
+            if (extension === 'xlsx' || extension === 'parquet') {
                 const mockHeaders = ["id", "product_name", "price", "category"];
                 const mockData = Array.from({length: 50}, (_, i) => ({
                     id: i + 1,
